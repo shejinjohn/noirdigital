@@ -207,6 +207,14 @@ nav.scrolled{height:64px;background:rgba(0,0,0,.85);backdrop-filter:blur(24px) s
 .split-line{overflow:hidden;display:block}
 .split-char{display:inline-block}
 
+/* ── SCROLL REVEAL (IntersectionObserver) ── */
+.about-reveal, .services-reveal, .process-reveal, .portfolio-reveal, .testi-reveal, .pricing-reveal, .contact-reveal, .about-left, .about-right, .service-card, .process-step, .portfolio-card, .testi-card, .pricing-card, .cta-section, .contact-left, .contact-right, .footer-grid, .split-line{
+  opacity:0; transform:translateY(32px); transition:opacity .7s cubic-bezier(.4,0,.2,1), transform .7s cubic-bezier(.4,0,.2,1);
+}
+.reveal-visible{
+  opacity:1; transform:translateY(0) !important;
+}
+
 /* ── ABOUT ── */
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:100px;align-items:center}
 .about-visual{position:relative}
@@ -1015,280 +1023,170 @@ footer{padding:80px 0 40px;border-top:1px solid var(--border)}
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 
 <script>
+// ── SAFETY: All content visible by default. GSAP only adds enhancements. ──
+
 // ── LOADER ──
-let loaderProgress = 0;
-const loaderBar = document.getElementById('loaderBar');
-const loaderInterval = setInterval(() => {
-  loaderProgress += Math.random() * 15;
+var loaderProgress = 0;
+var loaderBar = document.getElementById('loaderBar');
+var loaderInterval = setInterval(function() {
+  loaderProgress += Math.random() * 20;
   if (loaderProgress >= 100) {
     loaderProgress = 100;
     clearInterval(loaderInterval);
-    setTimeout(() => {
+    setTimeout(function() {
       document.getElementById('loader').classList.add('hidden');
-      initAnimations();
-    }, 400);
+      tryStartGSAP();
+    }, 300);
   }
   loaderBar.style.width = loaderProgress + '%';
-}, 100);
+}, 80);
+
+// Fallback: force-hide loader after 5s
+setTimeout(function() {
+  document.getElementById('loader').classList.add('hidden');
+  tryStartGSAP();
+}, 5000);
 
 // ── CUSTOM CURSOR ──
-const cursorDot = document.getElementById('cursorDot');
-const cursorRing = document.getElementById('cursorRing');
-let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
-let isHovering = false;
-
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  cursorDot.style.left = mouseX + 'px';
-  cursorDot.style.top = mouseY + 'px';
-});
-
-function animateCursor() {
-  ringX += (mouseX - ringX) * 0.15;
-  ringY += (mouseY - ringY) * 0.15;
-  cursorRing.style.left = ringX + 'px';
-  cursorRing.style.top = ringY + 'px';
-  requestAnimationFrame(animateCursor);
+var cursorDot = document.getElementById('cursorDot');
+var cursorRing = document.getElementById('cursorRing');
+if (cursorDot && cursorRing) {
+  var mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+  document.addEventListener('mousemove', function(e) {
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursorDot.style.left = mouseX + 'px';
+    cursorDot.style.top = mouseY + 'px';
+  });
+  function animateCursor() {
+    ringX += (mouseX - ringX) * 0.15;
+    ringY += (mouseY - ringY) * 0.15;
+    cursorRing.style.left = ringX + 'px';
+    cursorRing.style.top = ringY + 'px';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+  var hoverEls = document.querySelectorAll('a, button, .service-card, .portfolio-card, .testi-card, .pricing-card, input, select, textarea');
+  for (var i = 0; i < hoverEls.length; i++) {
+    hoverEls[i].addEventListener('mouseenter', function() { cursorDot.classList.add('hover'); cursorRing.classList.add('hover'); });
+    hoverEls[i].addEventListener('mouseleave', function() { cursorDot.classList.remove('hover'); cursorRing.classList.remove('hover'); });
+  }
+  document.addEventListener('mousedown', function() { cursorDot.classList.add('click'); cursorRing.classList.add('click'); });
+  document.addEventListener('mouseup', function() { cursorDot.classList.remove('click'); cursorRing.classList.remove('click'); });
 }
-animateCursor();
-
-// Hover detection
-const hoverElements = document.querySelectorAll('a, button, .service-card, .portfolio-card, .testi-card, .pricing-card, input, select, textarea');
-hoverElements.forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    cursorDot.classList.add('hover');
-    cursorRing.classList.add('hover');
-  });
-  el.addEventListener('mouseleave', () => {
-    cursorDot.classList.remove('hover');
-    cursorRing.classList.remove('hover');
-  });
-});
-
-document.addEventListener('mousedown', () => {
-  cursorDot.classList.add('click');
-  cursorRing.classList.add('click');
-});
-document.addEventListener('mouseup', () => {
-  cursorDot.classList.remove('click');
-  cursorRing.classList.remove('click');
-});
 
 // ── MARQUEE ──
-const marquee = document.getElementById('marquee');
-const marqueeContent = marquee.innerHTML;
-marquee.innerHTML = marqueeContent + marqueeContent + marqueeContent;
+var marquee = document.getElementById('marquee');
+if (marquee) { marquee.innerHTML = marquee.innerHTML + marquee.innerHTML + marquee.innerHTML; }
 
 // ── NAV ──
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 80);
-  document.getElementById('backTop').classList.toggle('show', window.scrollY > 600);
-
-  // Active nav
-  const sections = document.querySelectorAll('section[id]');
-  let current = '';
-  sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 200) current = s.getAttribute('id');
-  });
-  document.querySelectorAll('.nav-link').forEach(l => {
-    l.classList.toggle('active', l.getAttribute('href') === '#' + current);
-  });
+var nav = document.getElementById('nav');
+window.addEventListener('scroll', function() {
+  if (nav) nav.classList.toggle('scrolled', window.scrollY > 80);
+  var bt = document.getElementById('backTop');
+  if (bt) bt.classList.toggle('show', window.scrollY > 600);
+  var sections = document.querySelectorAll('section[id]');
+  var current = '';
+  for (var i = 0; i < sections.length; i++) {
+    if (window.scrollY >= sections[i].offsetTop - 200) current = sections[i].getAttribute('id');
+  }
+  var navLinks = document.querySelectorAll('.nav-link');
+  for (var j = 0; j < navLinks.length; j++) {
+    navLinks[j].classList.toggle('active', navLinks[j].getAttribute('href') === '#' + current);
+  }
 });
 
 // ── PORTFOLIO DRAG SCROLL ──
-const portfolioTrack = document.getElementById('portfolioTrack');
-let isDown = false, startX, scrollLeft;
-portfolioTrack.addEventListener('mousedown', (e) => {
-  isDown = true;
-  startX = e.pageX - portfolioTrack.offsetLeft;
-  scrollLeft = portfolioTrack.scrollLeft;
-});
-portfolioTrack.addEventListener('mouseleave', () => isDown = false);
-portfolioTrack.addEventListener('mouseup', () => isDown = false);
-portfolioTrack.addEventListener('mousemove', (e) => {
-  if (!isDown) return;
-  e.preventDefault();
-  const x = e.pageX - portfolioTrack.offsetLeft;
-  portfolioTrack.scrollLeft = scrollLeft - (x - startX) * 1.5;
-});
+var portfolioTrack = document.getElementById('portfolioTrack');
+if (portfolioTrack) {
+  var isDown = false, startX, scrollLeft;
+  portfolioTrack.addEventListener('mousedown', function(e) { isDown = true; startX = e.pageX - portfolioTrack.offsetLeft; scrollLeft = portfolioTrack.scrollLeft; });
+  portfolioTrack.addEventListener('mouseleave', function() { isDown = false; });
+  portfolioTrack.addEventListener('mouseup', function() { isDown = false; });
+  portfolioTrack.addEventListener('mousemove', function(e) { if (!isDown) return; e.preventDefault(); portfolioTrack.scrollLeft = scrollLeft - (e.pageX - portfolioTrack.offsetLeft - startX) * 1.5; });
+}
 
 // ── CONTACT FORM ──
 function handleSubmit(e) {
   e.preventDefault();
-  const f = e.target;
-  const n = f.querySelector('input[type="text"]').value;
-  const b = f.querySelectorAll('input[type="text"]')[1].value;
-  const s = f.querySelector('select').value;
-  const p = f.querySelector('input[type="tel"]').value;
-  const m = f.querySelector('textarea').value;
-  const msg = `*NOIR DIGITAL ENQUIRY*\n\n*Name:* ${n}\n*Business:* ${b}\n*Need:* ${s}\n*Phone:* ${p}\n*Message:* ${m||'N/A'}`;
-  window.open(`https://wa.me/918217202270?text=${encodeURIComponent(msg)}`, '_blank');
+  var f = e.target;
+  var n = f.querySelector('input[type="text"]').value;
+  var b = f.querySelectorAll('input[type="text"]')[1].value;
+  var s = f.querySelector('select').value;
+  var p = f.querySelector('input[type="tel"]').value;
+  var m = f.querySelector('textarea').value;
+  var msg = '*NOIR DIGITAL ENQUIRY*\n\n*Name:* ' + n + '\n*Business:* ' + b + '\n*Need:* ' + s + '\n*Phone:* ' + p + '\n*Message:* ' + (m || 'N/A');
+  window.open('https://wa.me/918217202270?text=' + encodeURIComponent(msg), '_blank');
 }
 function openContact(pkg) {
-  const s = document.querySelector('.contact-form select');
-  s.value = pkg;
-  if (!s.value) s.value = 'Just a Free Audit';
-  s.scrollIntoView({ behavior: 'smooth' });
-  s.focus();
+  var s = document.querySelector('.contact-form select');
+  if (!s) return;
+  s.value = pkg; if (!s.value) s.value = 'Just a Free Audit';
+  s.scrollIntoView({ behavior: 'smooth' }); s.focus();
 }
 
-// ── GSAP ANIMATIONS ──
-function initAnimations() {
+// ── SCROLL REVEALS (pure CSS/IntersectionObserver — no GSAP dependency) ──
+var revealEls = document.querySelectorAll('.about-reveal, .services-reveal, .process-reveal, .portfolio-reveal, .testi-reveal, .pricing-reveal, .contact-reveal, .about-left, .about-right, .service-card, .process-step, .portfolio-card, .testi-card, .pricing-card, .cta-section, .contact-left, .contact-right, .footer-grid, .split-line');
+var revealObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('reveal-visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(function(el) { revealObserver.observe(el); });
+
+// ── GSAP ENHANCEMENTS (loaded from CDN, graceful fallback) ──
+var gsapReady = false;
+
+function tryStartGSAP() {
+  if (gsapReady) return;
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+    // GSAP CDN failed — content is already visible via IntersectionObserver above
+    return;
+  }
+  gsapReady = true;
   gsap.registerPlugin(ScrollTrigger);
 
-  // Hero animations
-  const heroTl = gsap.timeline({ delay: 0.2 });
+  // Hero entrance
+  var heroTl = gsap.timeline({ delay: 0.1 });
   heroTl
-    .from('.hero-reveal', { y: 40, opacity: 0, duration: 1, ease: 'power3.out', stagger: 0.15 })
-    .from('.hero-line', { y: 80, opacity: 0, duration: 1.2, ease: 'power4.out', stagger: 0.15 }, 0.1)
-    .from('.hero-orb', { scale: 0, opacity: 0, duration: 2, ease: 'power2.out', stagger: 0.2 }, 0)
-    .from('.grid-bg', { opacity: 0, duration: 2, ease: 'power2.out' }, 0.3);
+    .from('.hero-reveal', { y: 30, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.12 })
+    .from('.hero-line', { y: 60, opacity: 0, duration: 1, ease: 'power4.out', stagger: 0.12 }, 0.05)
+    .from('.hero-orb', { scale: 0, opacity: 0, duration: 1.5, ease: 'power2.out', stagger: 0.15 }, 0);
 
-  // Counter animation
-  const counters = document.querySelectorAll('.accent-num[data-count]');
-  counters.forEach(counter => {
-    const target = parseInt(counter.dataset.count);
+  // Counters
+  document.querySelectorAll('.accent-num[data-count]').forEach(function(counter) {
+    var target = parseInt(counter.dataset.count);
     ScrollTrigger.create({
-      trigger: counter,
-      start: 'top 80%',
-      onEnter: () => {
-        gsap.to(counter, {
-          innerText: target,
-          duration: 2,
-          ease: 'power2.out',
-          snap: { innerText: 1 },
-          onUpdate: function() {
-            counter.textContent = Math.ceil(counter.innerText);
-          }
-        });
-      },
-      once: true
+      trigger: counter, start: 'top 85%',
+      onEnter: function() {
+        gsap.to(counter, { innerText: target, duration: 2, ease: 'power2.out', snap: { innerText: 1 }, onUpdate: function() { counter.textContent = Math.ceil(counter.innerText); } });
+      }, once: true
     });
   });
 
-  // Marquee scroll
-  gsap.to('#marquee', {
-    x: -(marquee.scrollWidth / 3),
-    duration: 30,
-    ease: 'none',
-    repeat: -1
-  });
+  // Marquee
+  if (marquee) gsap.to('#marquee', { x: -(marquee.scrollWidth / 3), duration: 30, ease: 'none', repeat: -1 });
 
   // Parallax orbs
-  gsap.to('.orb-1', { y: -60, x: 30, duration: 8, ease: 'none', repeat: -1, yoyo: true });
-  gsap.to('.orb-2', { y: 40, x: -20, duration: 10, ease: 'none', repeat: -1, yoyo: true });
-  gsap.to('.orb-3', { y: -30, x: 20, duration: 7, ease: 'none', repeat: -1, yoyo: true });
-  gsap.to('.orb-4', { y: 50, x: -30, duration: 9, ease: 'none', repeat: -1, yoyo: true });
+  gsap.to('.orb-1', { y: -50, x: 25, duration: 8, ease: 'none', repeat: -1, yoyo: true });
+  gsap.to('.orb-2', { y: 35, x: -15, duration: 10, ease: 'none', repeat: -1, yoyo: true });
+  gsap.to('.orb-3', { y: -25, x: 15, duration: 7, ease: 'none', repeat: -1, yoyo: true });
+  gsap.to('.orb-4', { y: 40, x: -25, duration: 9, ease: 'none', repeat: -1, yoyo: true });
 
-  // Section reveals
-  const revealElements = document.querySelectorAll('.about-reveal, .services-reveal, .process-reveal, .portfolio-reveal, .testi-reveal, .pricing-reveal, .contact-reveal');
-  revealElements.forEach(el => {
-    gsap.from(el, {
-      scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' },
-      y: 40, opacity: 0, duration: 0.8, ease: 'power3.out'
-    });
-  });
-
-  // Split line reveals
-  document.querySelectorAll('.split-line').forEach((line, i) => {
-    gsap.from(line, {
-      scrollTrigger: { trigger: line, start: 'top 85%' },
-      y: 60, opacity: 0, duration: 0.9, ease: 'power3.out',
-      delay: i * 0.1
-    });
-  });
-
-  // About cards
-  gsap.from('.about-left', {
-    scrollTrigger: { trigger: '.about-grid', start: 'top 75%' },
-    x: -60, opacity: 0, duration: 1, ease: 'power3.out'
-  });
-  gsap.from('.about-right', {
-    scrollTrigger: { trigger: '.about-grid', start: 'top 75%' },
-    x: 60, opacity: 0, duration: 1, ease: 'power3.out', delay: 0.15
-  });
-
-  // Services stagger
-  gsap.from('.service-card', {
-    scrollTrigger: { trigger: '.services-grid', start: 'top 75%' },
-    y: 50, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1
-  });
-
-  // Process steps
-  document.querySelectorAll('.process-step').forEach((step, i) => {
-    gsap.from(step, {
-      scrollTrigger: { trigger: step, start: 'top 80%' },
-      y: 40, opacity: 0, duration: 0.8, ease: 'power3.out',
-      delay: i * 0.1
-    });
-  });
-
-  // Portfolio cards
-  gsap.from('.portfolio-card', {
-    scrollTrigger: { trigger: '.portfolio-section', start: 'top 75%' },
-    y: 50, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.12
-  });
-
-  // Testimonials
-  gsap.from('.testi-card', {
-    scrollTrigger: { trigger: '.testi-grid', start: 'top 75%' },
-    y: 40, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1
-  });
-
-  // Pricing
-  gsap.from('.pricing-card', {
-    scrollTrigger: { trigger: '.pricing-grid', start: 'top 75%' },
-    y: 50, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.12
-  });
-
-  // CTA
-  gsap.from('.cta-section', {
-    scrollTrigger: { trigger: '.cta-section', start: 'top 80%' },
-    y: 40, opacity: 0, scale: 0.97, duration: 0.8, ease: 'power3.out'
-  });
-
-  // Contact
-  gsap.from('.contact-left', {
-    scrollTrigger: { trigger: '.contact-grid', start: 'top 75%' },
-    x: -50, opacity: 0, duration: 0.9, ease: 'power3.out'
-  });
-  gsap.from('.contact-right', {
-    scrollTrigger: { trigger: '.contact-grid', start: 'top 75%' },
-    x: 50, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.15
-  });
-
-  // Footer
-  gsap.from('.footer-grid', {
-    scrollTrigger: { trigger: 'footer', start: 'top 90%' },
-    y: 30, opacity: 0, duration: 0.7, ease: 'power3.out'
-  });
-
-  // Parallax on scroll for hero content
+  // Hero parallax on scroll
   gsap.to('.hero-content', {
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1 },
-    y: 150, opacity: 0.3
+    y: 120, opacity: 0.4
   });
+}
 
-  // Horizontal scroll for portfolio on desktop
-  const portfolioSection = document.querySelector('.portfolio-section');
-  const portfolioCards = document.querySelectorAll('.portfolio-card');
-  const totalWidth = portfolioCards.length * (portfolioCards[0].offsetWidth + 24) - 24;
-
-  if (window.innerWidth > 768 && totalWidth > portfolioSection.offsetWidth) {
-    gsap.to(portfolioTrack, {
-      x: -(totalWidth - portfolioSection.offsetWidth + 40),
-      ease: 'none',
-      scrollTrigger: {
-        trigger: portfolioSection,
-        start: 'top center',
-        end: () => `+=${totalWidth - portfolioSection.offsetWidth}`,
-        scrub: 1,
-        pin: false,
-      }
-    });
-  }
+// Try GSAP from multiple events
+document.addEventListener('DOMContentLoaded', function() { setTimeout(tryStartGSAP, 600); });
+window.addEventListener('load', function() { setTimeout(tryStartGSAP, 300); });
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(tryStartGSAP, 1000);
 }
 </script>
 </body>
